@@ -39,7 +39,7 @@ properly.
   (admin/config/people/permissions#module-file).
 - Go to the text format(s) of your choice and enable the "File Entity Embed
   Filter" (Enabled filters section) and drag the plugin to the "Active
-  toolbar".
+  toolbar" ![](plugins/feef_select/icons/feef_select.png).
 
 ## Issues
 

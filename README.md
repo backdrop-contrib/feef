@@ -1,4 +1,4 @@
-# File Entity Embed Filter ![](img/feef_select_40.png)
+# File Entity Embed Filter   ![](img/feef_select_30.png)
 
 Backdrop CMS module to embed file entities in content using a token-like placeholder.
 

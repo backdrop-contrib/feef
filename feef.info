@@ -1,0 +1,7 @@
+name = File Entity Embed Filter
+description = Embed File entities in content using token-like placeholders.
+backdrop = 1.x
+type = module
+dependencies[] = file
+dependencies[] = filter
+dependencies[] = views

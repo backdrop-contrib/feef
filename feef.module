@@ -1,0 +1,277 @@
+<?php
+
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function feef_menu() {
+  $items['editor/dialog/feef/%filter_format'] = array(
+    'title' => 'Select file',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('feef_select_file_form', 3),
+    'access callback' => 'filter_dialog_access',
+    'access arguments' => array(3, 'feef_select'),
+    'theme callback' => 'ajax_base_page_theme',
+    'type' => MENU_CALLBACK,
+    'file' => 'feef.pages.inc',
+  );
+  $items['feef-fid/autocomplete'] = array(
+    'page callback' => 'feef_ajax_autocomplete_file',
+    'delivery callback' => 'backdrop_json_deliver',
+    'access callback' => '_feef_access_autocomplete',
+    'type' => MENU_CALLBACK,
+    'file' => 'feef.pages.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_filter_info().
+ */
+function feef_filter_info() {
+  $filters['feef'] = array(
+    'title' => t('File Entity Embed Filter'),
+    'description' => t('Renders file entities based on placeholders like "[file-embed:7]", where "7" is the id of the file.'),
+    'process callback'  => '_feef_process',
+    'allowed html callback' => '_feef_allowed_html',
+    'tips callback' => '_feef_filter_tips',
+  );
+  return $filters;
+}
+
+/**
+ * Implements hook_ckeditor_settings_alter().
+ */
+function feef_ckeditor_settings_alter(array &$settings, $format) {
+  global $base_path;
+  $feef_token = filter_editor_dialog_token($format, 'feef_select');
+  $path = $base_path . 'editor/dialog/feef/' . $format->format;
+  $url = url($path, array('query' => array('token' => $feef_token, 'calling_path' => $_GET['q'])));
+  $settings['backdrop']['feefDialogUrl'] = $url;
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function feef_preprocess_file_entity(&$variables) {
+  if (isset($variables['elements']['#attributes']['class'])) {
+    $variables['view_mode'] = 'full';
+    $variables['page'] = TRUE;
+    $variables['classes'][] = 'feef-embedded';
+  }
+}
+
+/**
+ * Custom access callback for autocomplete path.
+ */
+function _feef_access_autocomplete() {
+  global $user;
+  if ($user->uid > 0) {
+    // Not anonymous and user can view files.
+    return user_access('view files', $user);
+  }
+  return FALSE;
+}
+
+/**
+ * Custom process callback for this filter.
+ */
+function _feef_process($text, $filter, $format, $langcode, $cache, $cache_id) {
+  $text = preg_replace_callback('/\[file-embed:\d+(:full)?\]/', '_feef_pattern_to_file', $text);
+  return $text;
+}
+
+/**
+ * Custom callback to replace a pattern with a rendered file.
+ *
+ * @see feef_preprocess_file_entity()
+ */
+function _feef_pattern_to_file($match) {
+  $string = str_replace(array('[', ']'), '', $match[0]);
+  $parts = explode(':', $string);
+  $fid = $parts[1];
+  $mode = isset($parts[2]) ? $parts[2] : '';
+  $file = file_load($fid);
+  if ($file) {
+    if ($mode == 'full') {
+      $build = file_view($file, 'default');
+      // Contextual links cause problems because of filter caching,
+      // they show up for anonymous, remove them for embedded.
+      unset($build['#contextual_links']);
+      $build['#attributes']['class'] = array('feef-embedded');
+    }
+    else {
+      $build = file_view_file($file);
+    }
+    return backdrop_render($build);
+  }
+  return '';
+}
+
+/**
+ * Custom callback for allowed html tags.
+ */
+function _feef_allowed_html() {
+  return array(
+    'allowed' => array(
+      'audio' => TRUE,
+      'video' => TRUE,
+      'source' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_ckeditor_plugins().
+ *
+ * Which works not at all.
+ */
+function feef_ckeditor_plugins() {
+  $path = backdrop_get_path('module', 'feef') . '/plugins/feef_select';
+  $plugins['feef_select'] = array(
+    'path' => $path,
+    'file' => 'plugin.js',
+    'buttons' => array(
+      'feef_select' => array(
+        'label' => 'Select file entities to embed',
+        'image' => $path . '/icons/feef_select.png',
+      ),
+    ),
+  );
+  return $plugins;
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function feef_entity_insert(EntityInterface $entity) {
+  $fids_by_field = _feef_get_file_ids_by_field($entity);
+  foreach ($fids_by_field as $field => $fids) {
+    _feef_file_usage_add($fids, $entity);
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function feef_entity_update(EntityInterface $entity) {
+  if (!empty($entity->original)) {
+    $entity_info = entity_get_info($entity->entityType());
+    $vid_key = isset($entity_info['entity keys']['revision']) ? $entity_info['entity keys']['revision'] : NULL;
+    if ($vid_key && $entity->$vid_key != $entity->original->$vid_key) {
+      // A new revision, record usage as new.
+      $fids_by_field = _feef_get_file_ids_by_field($entity);
+      foreach ($fids_by_field as $field => $fids) {
+        _feef_file_usage_add($fids, $entity);
+      }
+    }
+    else {
+      // No new revision, compare old and new file usage.
+      $original_fids_by_field = _feef_get_file_ids_by_field($entity->original);
+      $fids_by_field = _feef_get_file_ids_by_field($entity);
+      // Increment.
+      foreach ($fids_by_field as $field => $fids) {
+        $added_files = array_diff($fids_by_field[$field], $original_fids_by_field[$field]);
+        _feef_file_usage_add($fids, $entity);
+      }
+      // Decrement.
+      foreach ($original_fids_by_field as $field => $fids) {
+        $removed_files = array_diff($original_fids_by_field[$field], $fids_by_field[$field]);
+        _feef_file_usage_delete($fids, $entity);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function feef_entity_delete(EntityInterface $entity) {
+  $fids_by_field = _feef_get_file_ids_by_field($entity);
+  foreach ($fids_by_field as $field => $fids) {
+    _feef_file_usage_delete($fids, $entity);
+  }
+}
+
+/**
+ * Implements hook_node_revision_delete().
+ */
+function feef_node_revision_delete(Node $node) {
+  $fids_by_field = _feef_get_file_ids_by_field($node);
+  foreach ($fids_by_field as $field => $fids) {
+    _feef_file_usage_delete($fids, $node);
+  }
+}
+
+/**
+ * Helper function to get fids from field values.
+ */
+function _feef_get_file_ids_by_field(EntityInterface $entity) {
+  $fids = array();
+  $fields = field_info_instances($entity->entityType(), $entity->bundle());
+  $text_processed = array();
+  foreach ($fields as $field_name => $field) {
+    if (isset($field['settings']['text_processing']) && $field['settings']['text_processing']) {
+      $text_processed[] = $field_name;
+    }
+  }
+  foreach ($text_processed as $field_name) {
+    $field_items = $entity->{$field_name};
+    $fids[$field_name] = array();
+    foreach ($field_items as $langcode => $values) {
+      foreach ($values as $delta => $text) {
+        if (isset($text['value'])) {
+          $fids[$field_name] = array_merge($fids[$field_name], _feef_parse_file_fids($text['value']));
+        }
+        if (isset($text['summary'])) {
+          $fids[$field_name] = array_merge($fids[$field_name], _feef_parse_file_fids($text['summary']));
+        }
+      }
+    }
+  }
+  return $fids;
+}
+
+/**
+ * Helper function to extract file ids from text.
+ */
+function _feef_parse_file_fids($text) {
+  preg_match_all('/\[file-embed:(\d+)(:full)?\]/', $text, $matches);
+  if (!empty($matches[1])) {
+    return $matches[1];
+  }
+  return array();
+}
+
+/**
+ * Helper function to add file usage to an array of file ids.
+ */
+function _feef_file_usage_add($fids, $entity) {
+  foreach ($fids as $fid) {
+    $file = file_load($fid);
+    if ($file) {
+      file_usage_add($file, 'feef', $entity->entityType(), $entity->id());
+    }
+  }
+}
+
+/**
+ * Helper function to remove file usage for an array of file ids.
+ */
+function  _feef_file_usage_delete($fids, $entity) {
+  foreach ($fids as $fid) {
+    if ($file = file_load($fid)) {
+      file_usage_delete($file, 'feef', $entity->entityType(), $entity->id());
+    }
+  }
+}
+
+/**
+ * Returns filter tips for the formatting options.
+ */
+function _feef_filter_tips($filter, $format, $long = FALSE) {
+  return t('To embed file (entities) use placeholders like "[file-embed:7]", where "7" is the id of the file.');
+}

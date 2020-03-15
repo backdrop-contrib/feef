@@ -78,6 +78,12 @@ function feef_select_file_form_save($form, &$form_state) {
 function feef_ajax_autocomplete_file($string = '') {
   $matches = array();
   $view = views_get_view('feef_autocomplete');
+  if (!$view) {
+    $message = t('Accessing view "feef_autocomplete" was attempted, but it is missing.');
+    $message .= '<br />' . t('The CKEditor plugin of File Entity Embed Filter module depends on that view.');
+    watchdog('feef', $message, array(), WATCHDOG_ERROR);
+    return $matches;
+  }
   $view->set_display('master');
   $input = filter_var($string, FILTER_SANITIZE_STRING);
   if ($input != '') {

@@ -21,7 +21,7 @@ matter of flushing caches to update the file display everywhere.
 
 **Advanced usage**
 
-By default this module filters for audio and video file entities on your server.
+By default this modules' autocomplete plugin filters for audio and video file entities on your server.
 To include additional file types, you can edit the view _(feef_autocomplete)_.
 Adapt the views filters to your needs.
 

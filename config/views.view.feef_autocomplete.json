@@ -2,6 +2,7 @@
     "_config_name": "views.view.feef_autocomplete",
     "name": "feef_autocomplete",
     "description": "",
+    "module": "feef",
     "tag": "feef",
     "disabled": false,
     "base_table": "file_managed",

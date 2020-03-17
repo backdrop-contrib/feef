@@ -2,6 +2,7 @@
 
 /**
  * @file
+ * Uninstall hook for this module.
  */
 
 /**

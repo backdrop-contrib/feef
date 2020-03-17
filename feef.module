@@ -2,6 +2,7 @@
 
 /**
  * @file
+ * Main module code and hooks.
  */
 
 /**
@@ -126,8 +127,6 @@ function _feef_allowed_html() {
 
 /**
  * Implements hook_ckeditor_plugins().
- *
- * Which works not at all.
  */
 function feef_ckeditor_plugins() {
   $path = backdrop_get_path('module', 'feef') . '/plugins/feef_select';
@@ -261,7 +260,7 @@ function _feef_file_usage_add($fids, $entity) {
 /**
  * Helper function to remove file usage for an array of file ids.
  */
-function  _feef_file_usage_delete($fids, $entity) {
+function _feef_file_usage_delete($fids, $entity) {
   foreach ($fids as $fid) {
     if ($file = file_load($fid)) {
       file_usage_delete($file, 'feef', $entity->entityType(), $entity->id());

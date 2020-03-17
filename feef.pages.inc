@@ -2,6 +2,7 @@
 
 /**
  * @file
+ * Page and form callbacks.
  */
 
 /**
@@ -17,7 +18,7 @@ function feef_select_file_form($form, &$form_state, $format) {
   $form['full_mode'] = array(
     '#type' => 'checkbox',
     '#title' => 'Full entity',
-    '#default_value' => false,
+    '#default_value' => FALSE,
     '#description' => 'Render full file entity including wrappers and fields.',
   );
   $form['actions']['#type'] = 'actions';

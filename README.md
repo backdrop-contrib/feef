@@ -10,6 +10,8 @@ For easier embedding, this module ships with a CKEditor plugin with autocomplete
 Start typing in the _Select an existing file from server_ form field to get suggestions
 (filter is based on file names).
 
+![Dialog screenshot](https://raw.githubusercontent.com/backdrop-contrib/feef/1.x-1.x/screenshots/feef-dialog.webp)
+
 The widget has no upload feature. To select files (audio/video...), these files already need to exist on the server.
 
 Embedding files only requires _View files_ permission.
@@ -18,6 +20,10 @@ Embedding files only requires _View files_ permission.
 
 Because if you change something with the file itself or the file display, it's only a
 matter of flushing caches to update the file display everywhere.
+
+Note: it's recommended to place the "Correct faulty and chopped off HTML"
+filter for your content format (for example filtered_html) after the "File Entity Embed
+Filter", as CKEditor might wrap the tokens in paragraphs.
 
 **Advanced usage**
 

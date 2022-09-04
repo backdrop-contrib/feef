@@ -86,9 +86,8 @@ function feef_ajax_autocomplete_file($string = '') {
     return $matches;
   }
   $view->set_display('master');
-  $input = filter_var($string, FILTER_SANITIZE_STRING);
-  if ($input != '') {
-    $view->set_exposed_input(array('filename' => $input));
+  if ($string != '') {
+    $view->set_exposed_input(array('filename' => $string));
     $view->execute('master');
     $results = $view->result;
     if (!empty($results) && isset($results[0]->fid)) {

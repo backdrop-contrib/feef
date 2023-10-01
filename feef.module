@@ -129,7 +129,7 @@ function _feef_allowed_html() {
  * Implements hook_ckeditor_plugins().
  */
 function feef_ckeditor_plugins() {
-  $path = backdrop_get_path('module', 'feef') . '/plugins/feef_select';
+  $path = backdrop_get_path('module', 'feef') . '/plugins/ckeditor/feef_select';
   $plugins['feef_select'] = array(
     'path' => $path,
     'file' => 'plugin.js',

@@ -157,7 +157,6 @@ function feef_ckeditor5_plugins() {
       'feef_select' => array(
         'label' => t('Select file entities to embed'),
         'image' => $path . '/icons/feef.svg',
-        'required_html' => array('video', 'audio', 'source'),
         'plugins' => array('feefSelect.FeefSelect'),
       ),
     ),
@@ -207,7 +206,6 @@ function feef_tinymce_external_plugins($format) {
         'feefselect' => array(
           'icon' => 'feef',
           'tooltip' => 'Select file entities to embed',
-          'required_tags' => array('video', 'audio', 'source'),
         ),
       ),
       'icons' => array(

@@ -47,11 +47,7 @@ function feef_filter_info() {
  * Implements hook_ckeditor_settings_alter().
  */
 function feef_ckeditor_settings_alter(array &$settings, $format) {
-  global $base_path;
-  $feef_token = filter_editor_dialog_token($format, 'feef_select');
-  $path = $base_path . 'editor/dialog/feef/' . $format->format;
-  $url = url($path, array('query' => array('token' => $feef_token, 'calling_path' => $_GET['q'])));
-  $settings['backdrop']['feefDialogUrl'] = $url;
+  $settings['backdrop']['feefDialogUrl'] = _feef_get_dialog_url($format);
 }
 
 /**
@@ -141,6 +137,45 @@ function feef_ckeditor_plugins() {
     ),
   );
   return $plugins;
+}
+
+/**
+ * Implements hook_tinymce_external_plugins().
+ */
+function feef_tinymce_external_plugins($format) {
+  $module_url = base_path() . backdrop_get_path('module', 'feef');
+  $plugins = array(
+    'feef_select' => array(
+      'plugin_path' => $module_url . '/plugins/tinymce/feef_select/plugin.js',
+      'buttons' => array(
+        'feefselect' => array(
+          'icon' => 'feef',
+          'tooltip' => 'Select file entities to embed',
+          'required_tags' => array('video', 'audio', 'source'),
+        ),
+      ),
+      'icons' => array(
+        'feef' => 'feef.svg',
+      ),
+      'variables' => array(
+        'feefDialogUrl' => _feef_get_dialog_url($format),
+      ),
+    ),
+  );
+  return $plugins;
+}
+
+function _feef_get_dialog_url($format) {
+  global $base_path;
+  $feef_token = filter_editor_dialog_token($format, 'feef_select');
+  $path = $base_path . 'editor/dialog/feef/' . $format->format;
+  $url = url($path, array(
+    'query' => array(
+      'token' => $feef_token,
+      'calling_path' => $_GET['q'],
+    ),
+  ));
+  return $url;
 }
 
 /**

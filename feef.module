@@ -47,11 +47,14 @@ function feef_filter_info() {
  * Implements hook_ckeditor_settings_alter().
  */
 function feef_ckeditor_settings_alter(array &$settings, $format) {
-  global $base_path;
-  $feef_token = filter_editor_dialog_token($format, 'feef_select');
-  $path = $base_path . 'editor/dialog/feef/' . $format->format;
-  $url = url($path, array('query' => array('token' => $feef_token, 'calling_path' => $_GET['q'])));
-  $settings['backdrop']['feefDialogUrl'] = $url;
+  $settings['backdrop']['feefDialogUrl'] = _feef_get_dialog_url($format);
+}
+
+/**
+ * Implements hook_ckeditor5_config_alter().
+ */
+function feef_ckeditor5_config_alter(array &$config, $format) {
+  $config['feef']['feefDialogUrl'] = _feef_get_dialog_url($format);
 }
 
 /**
@@ -129,7 +132,7 @@ function _feef_allowed_html() {
  * Implements hook_ckeditor_plugins().
  */
 function feef_ckeditor_plugins() {
-  $path = backdrop_get_path('module', 'feef') . '/plugins/feef_select';
+  $path = backdrop_get_path('module', 'feef') . '/plugins/ckeditor/feef_select';
   $plugins['feef_select'] = array(
     'path' => $path,
     'file' => 'plugin.js',
@@ -141,6 +144,92 @@ function feef_ckeditor_plugins() {
     ),
   );
   return $plugins;
+}
+
+/**
+ * Implements hook_ckeditor5_plugins().
+ */
+function feef_ckeditor5_plugins() {
+  $path = backdrop_get_path('module', 'feef') . '/plugins/ckeditor5/feef_select';
+  $plugins['feefSelect.FeefSelect'] = array(
+    // This currently doesn't seem to do anything:
+    'library' => array('feef', 'feef.ckeditor5.feef_select'),
+    'buttons' => array(
+      'feef_select' => array(
+        'label' => t('Select file entities to embed'),
+        'image' => $path . '/icons/feef.svg',
+        'required_html' => array('video', 'audio', 'source'),
+        'plugins' => array('feefSelect.FeefSelect'),
+      ),
+    ),
+  );
+  return $plugins;
+}
+
+/**
+ * Implements hook_library_info().
+ */
+function feef_library_info() {
+  $info = system_get_info('module', 'feef');
+  // @see feef_ckeditor5_plugins().
+  $libraries['feef.ckeditor5.feef_select'] = array(
+    'title' => 'Feef',
+    'version' => $info['version'],
+    'js' => array(
+      backdrop_get_path('module', 'feef') . '/plugins/ckeditor5/feef_select/plugin.js' => array(),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Workaround for libraries not loaded dynamically.
+ *
+ * @see https://github.com/backdrop-contrib/ckeditor5/issues/5
+ */
+function feef_library_info_alter(&$libraries, $module) {
+  if ($module == 'ckeditor5') {
+    $libraries['backdrop.ckeditor5']['dependencies'][] = array('feef', 'feef.ckeditor5.feef_select');
+  }
+}
+
+/**
+ * Implements hook_tinymce_external_plugins().
+ */
+function feef_tinymce_external_plugins($format) {
+  $module_url = base_path() . backdrop_get_path('module', 'feef');
+  $plugins = array(
+    'feef_select' => array(
+      'plugin_path' => $module_url . '/plugins/tinymce/feef_select/plugin.js',
+      'buttons' => array(
+        'feefselect' => array(
+          'icon' => 'feef',
+          'tooltip' => 'Select file entities to embed',
+          'required_tags' => array('video', 'audio', 'source'),
+        ),
+      ),
+      'icons' => array(
+        'feef' => 'feef.svg',
+      ),
+      'variables' => array(
+        'feefDialogUrl' => _feef_get_dialog_url($format),
+      ),
+    ),
+  );
+  return $plugins;
+}
+
+function _feef_get_dialog_url($format) {
+  global $base_path;
+  $feef_token = filter_editor_dialog_token($format, 'feef_select');
+  $path = $base_path . 'editor/dialog/feef/' . $format->format;
+  $url = url($path, array(
+    'query' => array(
+      'token' => $feef_token,
+      'calling_path' => $_GET['q'],
+    ),
+  ));
+  return $url;
 }
 
 /**

@@ -7,9 +7,8 @@
 
       editor.ui.componentFactory.add( 'feef_select', function () {
         const button = new CKEditor5.ui.ButtonView();
-        // Caution: this icon is modified, so CKE5 doesn't render it blurry!
         button.set({
-          icon: '<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="m12 1h-1v6h1m4 0h1v-6h-1" fill="none" stroke="currentColor" stroke-linecap="square" stroke-width="2"/><path d="m7 1h-6v16h16v-6" fill="none" stroke="currentColor" stroke-linecap="square" stroke-width="2"/><path d="m4 14 8 1e-5-8-8z" fill="currentColor"/></svg>',
+          icon: '<svg width="20" height="20" version="1.1" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="m1 1v18h18v-8h-2v6h-14v-14h6v-2zm10 0v8h3v-2h-1v-4h1v-2zm5 0v2h1v4h-1v2h3v-8zm-11 6v8h8z"/></svg>',
           tooltip: 'Select file entities to embed'
         });
         button.on('execute', function () {

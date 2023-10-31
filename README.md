@@ -6,7 +6,7 @@ To embed file entities use a placeholder with brackets like `[file-embed:7]` or
 `[file-embed:7:full]`, where "7" is the numeric file id.
 The second example shows as full entity including wrappers and attached fields (if any).
 
-For easier embedding, this module ships with a CKEditor plugin with autocomplete.
+For easier embedding, this module ships with CKEditor and TinyMCE plugins with autocomplete.
 Start typing in the _Select an existing file from server_ form field to get suggestions
 (filter is based on file names).
 
